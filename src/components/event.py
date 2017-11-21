@@ -1,6 +1,6 @@
 import re
 from inspect import signature
-from helper import BinderTrait
+from .helper import BinderTrait
 
 class EventObserver:
     'Event observer object'
@@ -27,7 +27,30 @@ class EventObserver:
     def assert_equals(self, callback):
         return self._id == id(callback)
 
-class EventHandler:
+class EventInterface:
+    '''
+    Allows the ability to listen to events made known by another
+    piece of functionality. Events are items that transpire based
+    on an action. With events you can add extra functionality
+    right after the event has triggered.
+    '''
+
+    def off(self, event = None, callback = None):
+        'Stops listening to an event'
+        pass
+
+    def on(self, event, callback = None, priority = 0):
+        '''
+        Attaches an instance to be notified
+        when an event has been triggered
+        '''
+        pass
+
+    def trigger(self, event, *args):
+        'Notify all observers of that a specific event has happened'
+        pass
+
+class EventHandler(EventInterface):
     '''
     Allows the ability to listen to events made known by another
     piece of functionality. Events are items that transpire based

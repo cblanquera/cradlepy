@@ -216,8 +216,34 @@ class DotTrait:
 
         return self
 
+class RegistryInterface:
+    '''
+    Registry are designed to easily manipulate data in
+    preparation to integrate with any multi dimensional
+    data store.
+    '''
 
-class Registry(MagicTrait, DotTrait):
+    def exists(self, *args):
+        'Returns true if the path keys exist in the dataset'
+        pass
+
+    def get(self, *args):
+        'Returns the exact data given the path keys'
+        pass
+
+    def is_empty(self, *args):
+        'Returns true if the path keys does not exist in the dataset or if it has an empy value'
+        pass
+
+    def remove(self, *args):
+        'Removes the data found in the path keys'
+        pass
+
+    def set(self, *args):
+        'Sets the given data to given the path keys'
+        pass
+
+class Registry(MagicTrait, DotTrait, RegistryInterface):
     '''
     Registry are designed to easily manipulate data in
     preparation to integrate with any multi dimensional
@@ -294,7 +320,22 @@ class Registry(MagicTrait, DotTrait):
         value = args.pop()
         return self.set_dot(separator.join(map(str, args)), value, separator)
 
-class Model(MagicTrait, DotTrait):
+class ModelInterface:
+    '''
+    Models are designed to easily manipulate data in
+    preparation to integrate with any one dimensional
+    data store. This is the main model object.
+    '''
+
+    def get(self):
+        'Returns the entire data'
+        pass
+
+    def set(self, data):
+        'Sets the entire data'
+        pass
+
+class Model(MagicTrait, DotTrait, ModelInterface):
     '''
     Models are designed to easily manipulate data in
     preparation to integrate with any one dimensional
@@ -318,7 +359,35 @@ class Model(MagicTrait, DotTrait):
                 self.__setitem__(key, value)
         return self
 
-class Collection:
+class CollectionInterface:
+    '''
+    Collections are a managable list of models. Model
+    methods called by the collection are simply passed
+    to each model in the collection. Collections perform
+    the same functionality as a model, except on a more
+    massive level. This is the main collection object.
+    '''
+
+    def add(self, model = {}):
+        'Adds a row to the collection'
+        pass
+
+    def cut(self, index = 'last'):
+        'Removes a row and reindexes the collection'
+        pass
+
+    def each(self, callback):
+        'Loops through returned result sets'
+        pass
+
+    def get(self):
+        'Returns the entire data'
+        pass
+
+    def set(self, collection):
+        pass
+
+class Collection(CollectionInterface):
     '''
     Collections are a managable list of models. Model
     methods called by the collection are simply passed
@@ -420,6 +489,8 @@ class Collection:
         return json.dumps(self._data, indent = 4)
 
     def add(self, model = {}):
+        'Adds a row to the collection'
+
         if isinstance(model, dict):
             model = Model(model)
 
@@ -429,6 +500,8 @@ class Collection:
         return self
 
     def cut(self, index = 'last'):
+        'Removes a row and reindexes the collection'
+
         if index == self.FIRST:
             index = 0
         elif index == self.LAST:
@@ -440,6 +513,8 @@ class Collection:
         return self
 
     def each(self, callback):
+        'Loops through returned result sets'
+
         if not callable(callback):
             return self
         #print self._data
@@ -449,12 +524,16 @@ class Collection:
         return self
 
     def get(self):
+        'Returns the entire data'
+
         results = []
         for model in self._data:
             results.append(model.get())
         return results
 
     def set(self, collection):
+        'Sets the entire data'
+
         if isinstance(collection, list):
             for model in collection:
                 self.add(model)
