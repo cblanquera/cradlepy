@@ -6,3 +6,7 @@ Cradle is a micro framework built on traits. Cradle is a different approach to d
 ## Running Test
 
 `python -m unittest -v`
+
+## Contributing
+
+Don't commit `pyc` files please. If you are forgetful like me, please use `export PYTHONDONTWRITEBYTECODE=1` during development
