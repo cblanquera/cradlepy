@@ -1,11 +1,16 @@
 import unittest
 
+from src.components.data import *
+
+class DataStub(MagicTrait, DotTrait):
+    _data = {}
+
 class TestMagicTrait(unittest.TestCase):
     def setUp(self):
-        pass
+        self.instance = DataStub()
 
     def tearDown(self):
-        pass
+        del self.instance
 
     def test__delattr__(self):
         pass
