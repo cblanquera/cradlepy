@@ -5,6 +5,10 @@ from src.components.data import *
 class DataStub(MagicTrait, DotTrait):
     pass
 
+class ModelStub(Model):
+    def test_call(self):
+        return 'called'
+
 class TestMagicTrait(unittest.TestCase):
     def setUp(self):
         self.instance = DataStub()
@@ -110,7 +114,7 @@ class TestDotTrait(unittest.TestCase):
 
     def test_is_dot(self):
         '@covers: set_dot, is_dot'
-        test2 = self.instance.set_dot('foo.bar', 4)
+        self.instance.set_dot('foo.bar', 4)
         self.assertEqual(self.instance.is_dot('foo.bar'), True)
         self.assertEqual(self.instance.is_dot('foo'), True)
         self.assertEqual(self.instance.is_dot('bar'), False)
@@ -121,8 +125,8 @@ class TestDotTrait(unittest.TestCase):
 
     def test_remove_dot(self):
         '@covers: set_dot, get_dot, remove_dot, is_dot'
-        test2 = self.instance.set_dot('foo.bar', 4).get_dot('foo.bar')
-        self.assertEqual(test2, 4)
+        test = self.instance.set_dot('foo.bar', 4).get_dot('foo.bar')
+        self.assertEqual(test, 4)
 
         self.instance.remove_dot('foo.bar')
         self.assertEqual(self.instance.is_dot('foo.bar'), False)
@@ -146,93 +150,242 @@ class TestDotTrait(unittest.TestCase):
 
 class TestRegistry(unittest.TestCase):
     def setUp(self):
-        pass
+        self.instance = Registry({'foo': {'bar': 'zoo'}})
 
     def tearDown(self):
-        pass
-
-    def test__init__(self):
-        pass
+        del self.instance
 
     def test_exists(self):
-        pass
+        '@covers exists'
+        self.assertEqual(self.instance.exists('foo'), True)
+        self.assertEqual(self.instance.exists('foo', 'bar'), True)
+        self.assertEqual(self.instance.exists('foo', 'bar', 'zoo'), False)
+        self.assertEqual(self.instance.exists('foo', 'zoo'), False)
+        self.assertEqual(self.instance.exists(), True)
 
     def test_get(self):
-        pass
+        '@covers get, set'
+        test1 = self.instance.get('foo', 'bar', 'zoo')
+        self.assertEqual(test1, None)
+        test2 = self.instance.set('foo', 'bar', 4).get('foo', 'bar')
+        self.assertEqual(test2, 4)
 
-    def test_is_empty(self):
-        pass
+        self.assertEqual(self.instance.get_foo()['bar'], 4)
+        self.assertEqual(self.instance['foo']['bar'], 4)
+        self.assertEqual(self.instance.foo['bar'], 4)
+
+        self.assertEqual(self.instance.get('foo', 'bar', 'zoo'), None)
+        self.assertEqual(self.instance.get('foo', 'zoo'), None)
+
+        self.instance.set('foo', 'bar', 'zoo', 5)
+        self.assertEqual(self.instance.get('foo', 'bar', 'zoo'), 5)
+        self.assertEqual(self.instance.get()['foo']['bar']['zoo'], 5)
+
+        self.instance.set() #coverage
+        self.instance.set('foo') #coverage
+
+        self.instance.set({'hello': {'hello': 'kitty'}})
+        self.assertEqual(self.instance.get('foo', 'bar', 'zoo'), 5)
+        self.assertEqual(self.instance.get('hello', 'hello'), 'kitty')
+
+    def test_empty(self):
+        '@covers empty'
+        test = self.instance.empty('foo', 'bar')
+        self.assertEqual(test, False)
+
+        test = self.instance.set('foo', 'bar', 4).empty('foo', 'bar')
+        self.assertEqual(test, True)
+
+        test = self.instance.set('foo', 'bar', 4.5).empty('foo', 'bar')
+        self.assertEqual(test, True)
+
+        test = self.instance.set('foo', 'bar', 0).empty('foo', 'bar')
+        self.assertEqual(test, True)
+
+        test = self.instance.set('foo', 'bar', '').empty('foo', 'bar')
+        self.assertEqual(test, True)
+
+        test = self.instance.set('foo', 'bar', {}).empty('foo', 'bar')
+        self.assertEqual(test, True)
+
+        test = self.instance.set('foo', 'bar', ()).empty('foo', 'bar')
+        self.assertEqual(test, True)
+
+        test = self.instance.set('foo', 'bar', []).empty('foo', 'bar')
+        self.assertEqual(test, True)
+
+        self.assertEqual(self.instance.empty(), False)
+
+        test = self.instance.empty('foo', 'zoo', 'bar')
+        self.assertEqual(test, True)
 
     def test_remove(self):
-        pass
+        '@covers remove'
+        self.instance.remove('foo', 'bar')
+        self.assertEqual(self.instance.is_dot('foo.bar'), False)
+        self.assertEqual(self.instance.is_dot('foo'), True)
 
-    def test_set(self):
-        pass
+        self.instance.remove() #coverage
 
 class TestModel(unittest.TestCase):
     def setUp(self):
-        pass
+        self.instance = Model({'foo': 'bar', 'bar': 'zoo'})
 
     def tearDown(self):
-        pass
-
-    def test__init__(self):
-        pass
+        del self.instance
 
     def test_get(self):
-        pass
+        '@covers get'
+        self.assertEqual(self.instance.get()['foo'], 'bar')
+        self.assertEqual(self.instance.get()['bar'], 'zoo')
 
     def test_set(self):
-        pass
+        '@covers set'
+        self.instance.set({'foo': 'zoo', 'bar': 'foo'})
+        self.assertEqual(self.instance.foo, 'zoo')
+        self.assertEqual(self.instance.bar, 'foo')
+
+        self.instance.set('foo') #coverage
 
 class TestCollection(unittest.TestCase):
     def setUp(self):
-        pass
+        self.instance = Collection([Model({'foo': 'bar', 'bar': 'zoo'})])
 
     def tearDown(self):
-        pass
+        del self.instance
 
-    def test__delattr__(self):
-        pass
+    def test_attr(self):
+        '@covers __delattr__, __getattr__, add'
+        self.instance.add({'foo': 'zoo', 'bar': 'foo'})
+        self.instance.add({'zoo': 'zoo', 'foo': 'foo'})
 
-    def test__delitem__(self):
-        pass
+        self.assertEqual(self.instance.foo[0], 'bar')
+        self.assertEqual(self.instance.foo[1], 'zoo')
+        self.assertEqual(self.instance.foo[2], 'foo')
 
-    def test__getattr__(self):
-        pass
+        self.assertEqual(self.instance[0].foo, 'bar')
+        self.assertEqual(self.instance[1].foo, 'zoo')
+        self.assertEqual(self.instance[2].foo, 'foo')
 
-    def test__getitem__(self):
-        pass
+        del self.instance.foo
 
-    def test__init__(self):
-        pass
+        self.assertEqual(self.instance.foo[0], None)
+        self.assertEqual(self.instance.foo[1], None)
+        self.assertEqual(self.instance.foo[2], None)
+
+        test = self.instance.set_foo_bar('zoo').get_foo_bar()
+
+        self.assertEqual(test[0], 'zoo')
+        self.assertEqual(test[1], 'zoo')
+        self.assertEqual(test[2], 'zoo')
+
+        list = []
+        list.append(ModelStub({'foo': 'bar', 'bar': 'zoo'}))
+        list.append(Model({'foo': 'zoo', 'bar': 'foo'}))
+        list.append(ModelStub({'zoo': 'zoo', 'foo': 'foo'}))
+        self.instance = Collection(list)
+
+        test = self.instance.test_call()
+
+        self.assertEqual(test[0], 'called')
+        self.assertEqual(test[1], False)
+        self.assertEqual(test[2], 'called')
+
+    def test__item__(self):
+        '@covers __delitem__, __getitem__, __setitem__'
+        self.instance.add({'foo': 'zoo', 'bar': 'foo'})
+        self.instance.add({'zoo': 'zoo', 'foo': 'foo'})
+
+        self.assertEqual(self.instance['foo'][0], 'bar')
+        self.assertEqual(self.instance['foo'][1], 'zoo')
+        self.assertEqual(self.instance['foo'][2], 'foo')
+
+        self.assertEqual(self.instance[0]['foo'], 'bar')
+        self.assertEqual(self.instance[1]['foo'], 'zoo')
+        self.assertEqual(self.instance[2]['foo'], 'foo')
+        self.assertEqual(self.instance[25], None)
+
+        self.instance['foo'] = 'zap'
+        self.assertEqual(self.instance[0]['foo'], 'zap')
+        self.assertEqual(self.instance[1]['foo'], 'zap')
+        self.assertEqual(self.instance[2]['foo'], 'zap')
+
+        del self.instance['foo']
+
+        self.assertEqual(self.instance['foo'][0], None)
+        self.assertEqual(self.instance['foo'][1], None)
+        self.assertEqual(self.instance['foo'][2], None)
+
+        del self.instance[0]
+
+        self.assertEqual(self.instance[0]['bar'], 'foo')
+
+        del self.instance[25] #coverage
 
     def test__iter__(self):
-        pass
+        for model in self.instance:
+            self.assertEqual(model.get()['foo'], 'bar')
+            self.assertEqual(model.get()['bar'], 'zoo')
+            break
 
     def test__len__(self):
-        pass
-
-    def test__setattr__(self):
-        pass
-
-    def test__setitem__(self):
-        pass
+        self.assertEqual(len(self.instance), 1)
 
     def test__str__(self):
+        '@covers str'
+        expected = '[\n    {\n        "foo": "bar",\n        "bar": "zoo"\n    }\n]'
+        self.assertEqual(str(self.instance), expected)
         pass
 
     def test_add(self):
-        pass
+        '@covers add'
+        self.instance.add({'foo': 'zoo', 'bar': 'foo'})
+        self.instance.add({'zoo': 'zoo', 'foo': 'foo'})
+
+        self.instance.add('foo')
+        self.assertEqual(self.instance[0].foo, 'bar')
+        self.assertEqual(self.instance[0].bar, 'zoo')
+        self.assertEqual(self.instance[1].foo, 'zoo')
+        self.assertEqual(self.instance[1].bar, 'foo')
 
     def test_cut(self):
-        pass
+        '@covers add, cut'
+        self.instance.add({'foo': 'zoo', 'bar': 'foo'})
+        self.instance.add({'zoo': 'zoo', 'foo': 'foo'})
+
+        self.instance.cut(1)
+        self.assertEqual(self.instance[1].foo, 'foo')
+
+        self.instance.cut('first')
+        self.assertEqual(self.instance[0].foo, 'foo')
+
+        self.instance.cut('last')
+        self.assertEqual(len(self.instance), 0)
+
+        self.instance.cut(0) #coverage
 
     def test_each(self):
-        pass
+        '@covers add, each'
+
+        self.instance.add({'foo': 'zoo', 'bar': 'foo'})
+        self.instance.add({'zoo': 'zoo', 'foo': 'foo'})
+
+        @self.instance.each
+        def hello(self, index, model):
+            model.set_foo('bar')
+
+        self.assertEqual(self.instance[0]['foo'], 'bar')
+        self.assertEqual(self.instance[1]['foo'], 'bar')
+        self.assertEqual(self.instance[2]['foo'], 'bar')
+
+        self.instance.each('foo') #coverage
 
     def test_get(self):
-        pass
+        '@covers get'
+        test = self.instance.get()
+        self.assertEqual(self.instance[0].foo, 'bar')
+        self.assertEqual(self.instance[0].bar, 'zoo')
 
     def test_set(self):
-        pass
+        '@covers set'
+        self.instance.set('foo') #coverage

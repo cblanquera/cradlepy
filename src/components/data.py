@@ -33,28 +33,27 @@ class MagicTrait:
 
                 #get attribute or None
                 return self.__getitem__(key)
-            #if the method starts with set
-            if name[:3] == 'set':
-                #set_user_name('-')
-                separator = '_'
-                if len(args) > 1 and isinstance(args[1], str):
-                    separator = args[1]
+            # the method has to start with set
+            #set_user_name('-')
+            separator = '_'
+            if len(args) > 1 and isinstance(args[1], str):
+                separator = args[1]
 
-                #determine the key name
-                key = name.replace('_', separator)
-                #get rid of prefix
-                key = key[(3 + len(separator)):]
+            #determine the key name
+            key = name.replace('_', separator)
+            #get rid of prefix
+            key = key[(3 + len(separator)):]
 
-                #if there are no arguments and its a key
-                if not len(args) and key in self.__dict__.keys():
-                    #remove it
-                    self.__delitem__(key)
-                else:
-                    #otherwise set it
-                    self.__setitem__(key, args[0])
+            #if there are no arguments and its a key
+            if not len(args) and key in self.__dict__.keys():
+                #remove it
+                self.__delitem__(key)
+            else:
+                #otherwise set it
+                self.__setitem__(key, args[0])
 
-                #either way return this
-                return self
+            #either way return this
+            return self
         # if its a function
         if name[:3] == 'get' or name[:3] == 'set':
             return function
@@ -231,7 +230,7 @@ class RegistryInterface: #ignore coverage
         'Returns the exact data given the path keys'
         pass
 
-    def is_empty(self, *args):
+    def empty(self, *args):
         'Returns true if the path keys does not exist in the dataset or if it has an empy value'
         pass
 
@@ -258,7 +257,7 @@ class Registry(MagicTrait, DotTrait, RegistryInterface):
         'Returns true if the path keys exist in the dataset'
 
         if not len(args):
-            return self.is_empty(*args)
+            return not self.empty(*args)
 
         separator = '--' + str(uuid.uuid4().hex) + '--'
 
@@ -274,18 +273,18 @@ class Registry(MagicTrait, DotTrait, RegistryInterface):
 
         return self.get_dot(separator.join(map(str, args)), separator)
 
-    def is_empty(self, *args):
+    def empty(self, *args):
         'Returns true if the path keys does not exist in the dataset or if it has an empy value'
 
-        if not len(args):
-            return len(self.data) == 0
+        if args == None or not len(args):
+            return len(self.__dict__) == 0
 
         separator = '--' + str(uuid.uuid4().hex) + '--'
 
         value = self.get_dot(separator.join(map(str, args)), separator)
 
         if value == None:
-            return False
+            return True
 
         if isinstance(value, (list, tuple, str)):
             return len(value) == 0
@@ -392,8 +391,6 @@ class Collection(CollectionInterface):
     massive level. This is the main collection object.
     '''
 
-    _list = []
-
     FIRST = 'first'
 
     LAST = 'last'
@@ -404,6 +401,7 @@ class Collection(CollectionInterface):
 
     def __delitem__(self, key):
         'Deletes the item accessed like an array'
+
         #if its an integer
         if isinstance(key, int):
             if key < len(self._list):
@@ -434,10 +432,16 @@ class Collection(CollectionInterface):
                 return self
 
             # call real function
+            results = [];
             for model in self._list:
                 callback = getattr(model, name, None)
                 if callable(callback):
-                    callback(*args)
+                    results.append(callback(*args))
+                    continue
+
+                results.append(False)
+
+            return results
 
         # getter or setter ?
         if name[:3] == 'get' or name[:3] == 'set':
@@ -445,35 +449,40 @@ class Collection(CollectionInterface):
 
         # real function ?
         for model in self._list:
-            if hasattr(model, name):
+
+            if hasattr(model, name) and callable(getattr(model, name)):
                 return function
 
         return self.__getitem__(name)
 
     def __getitem__(self, key):
         'Returns the value accessed like an array'
+
+        #if it's an integer
+        if isinstance(key, int):
+            #they probably mean the list row
+            if key < len(self._list):
+                return self._list[key]
+            return None
         # if key is of invalid type or value, the list values will raise the error
         results = [];
         for model in self._list:
-            results.append(model[name]);
+            results.append(model[key]);
 
         return results
 
     def __init__(self, collection = None):
         'Sets up the data'
+        self._list = []
         self.set(collection)
 
     def __iter__(self):
         'Iterates throught the data'
-        return iter(self._list.items())
+        return iter(self._list)
 
     def __len__(self):
         'Returns the length'
         return len(self._list)
-
-    def __setattr__(self, name, value):
-        'Processes set properties'
-        self.__setitem__(name, value)
 
     def __setitem__(self, key, value):
         'Sets the item accessed like an array'
@@ -482,7 +491,10 @@ class Collection(CollectionInterface):
 
     def __str__(self):
         'Object to string'
-        return json.dumps(self._list, indent = 4)
+        results = []
+        for model in self._list:
+            results.append(model.get())
+        return json.dumps(results, indent = 4)
 
     def add(self, model = {}):
         'Adds a row to the collection'
@@ -490,7 +502,7 @@ class Collection(CollectionInterface):
         if isinstance(model, dict):
             model = Model(model)
 
-        if isinstance(model, Model):
+        if isinstance(model, ModelInterface):
             self._list.append(model)
 
         return self
