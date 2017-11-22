@@ -1,3 +1,5 @@
+from inspect import signature
+
 class ConditionalTrait:
     'Adds a generic `when()` method used during chainable calls'
 
@@ -52,10 +54,22 @@ class BinderTrait:
 
     def bind_method(self, callback):
         def wrapper(old, *args):
-            callback(self, *args)
+            siggy = signature(callback)
+            if '*' in str(siggy):
+                return callback(self, *args)
+
+            max = len(siggy.parameters) - 1
+            new_args = args[:max]
+            return callback(self, *new_args)
         return wrapper
 
     def bind_static(self, callback):
         def wrapper(*args):
-            callback(self, *args)
+            siggy = signature(callback)
+            if '*' in str(siggy):
+                return callback(self, *args)
+
+            max = len(siggy.parameters) - 1
+            new_args = args[:max]
+            return callback(self, *new_args)
         return wrapper

@@ -27,7 +27,7 @@ class EventObserver:
     def assert_equals(self, callback):
         return self._id == id(callback)
 
-class EventInterface:
+class EventInterface: #ignore coverage
     '''
     Allows the ability to listen to events made known by another
     piece of functionality. Events are items that transpire based
@@ -58,15 +58,15 @@ class EventHandler(EventInterface):
     right after the event has triggered.
     '''
 
-    _observers = {}
-
-    _regex = []
-
     _meta = True
+
+    def __init__(self):
+        self._observers = {}
+        self._regex = []
 
     def get_meta(self):
         'Returns the current matched handler'
-        return self._meta
+        return EventHandler._meta
 
     def match(self, event):
         'Returns possible event matches'
@@ -168,9 +168,9 @@ class EventHandler(EventInterface):
         # is there a sprintf ?
         # because sscanf will match Render Home Page
         # and Render Home Body with Render %s Page
-        elif re.match(r'%[sducoxXbgGeEfF]', event):
+        elif re.search(r'%[sducoxXbgGeEfF]', event):
             event = re.sub(r'%[sducoxXbgGeEfF]', '(.+)', event)
-            self._regex.append(event);
+            self._regex.append('#' + event + '#');
 
         if not event in self._observers.keys():
             self._observers[event] = {}
@@ -200,10 +200,10 @@ class EventHandler(EventInterface):
                 continue
 
             # sort it out
-            self._observers[event] = krsort(self._observers[event])
+            rsorted = krsort(self._observers[event])
             observers = []
 
-            for items in self._observers[event]:
+            for items in rsorted:
                 observers += items[:]
 
             # for each observer
@@ -213,23 +213,22 @@ class EventHandler(EventInterface):
                 # add on to match
                 match['callback'] = callback
                 # set the current
-                self._meta = match
+                EventHandler._meta = match
 
                 # if this is the same event, call the method, if the method returns false
                 siggy = signature(callback)
                 if '*' in str(siggy):
                     if callback(self, *args) == False:
-                        self._meta = False
+                        EventHandler._meta = False
                         return self
                 else:
                     max = len(siggy.parameters) - 1
                     new_args = args[:max]
                     if callback(self, *new_args) == False:
-                        self._meta = False
+                        EventHandler._meta = False
                         return self
 
-
-        self._meta = True
+        EventHandler._meta = True
         return self
 
     def _remove_observers_by_callback(self, callback):
@@ -280,9 +279,22 @@ class EventTrait(BinderTrait):
         '''
 
         handler = self.get_event_handler()
-        callback = self.bind_method(callback)
 
-        handler.on(event, callback, priority);
+        # decorator
+        # as in @events.on('foobar')
+        if not callable(callback):
+            # if as in @events.on('foobar', 3)
+            if isinstance(callback, (int, float)):
+                priority = callback
+
+            def wrapper(callback):
+                callback = self.bind_method(callback)
+                handler.on(event, callback, priority)
+
+            return wrapper
+
+        callback = self.bind_method(callback)
+        handler.on(event, callback, priority)
 
         return self;
 
@@ -293,7 +305,7 @@ class EventTrait(BinderTrait):
         if not isinstance(handler, EventHandler):
             return self
 
-        if static:
+        if is_static:
             EventTrait._global_event_handler = handler
 
         self._event_handler = handler

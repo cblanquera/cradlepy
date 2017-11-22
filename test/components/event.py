@@ -1,64 +1,238 @@
 import unittest
 
+from src.components.event import *
+
+class StubEvent(EventTrait):
+    pass
+
+class StubEventHandler(EventHandler):
+    pass
+
 class TestEventObserver(unittest.TestCase):
     def setUp(self):
-        pass
+        def callback(self):
+            return self
+
+        self.instance = EventObserver(callback)
 
     def tearDown(self):
-        pass
+        del self.instance
 
-    def test__init__(self):
-        pass
+    def test_callback(self):
+        '@covers set_callback, get_callback'
+        def callback(self):
+            return self
 
-    def test_get_callback(self):
-        pass
+        self.instance.set_callback(callback)
 
-    def test_set_callback(self):
-        pass
+        callback = self.instance.get_callback()
+        self.assertEqual(callback.__name__, 'callback')
 
     def test_assert_equals(self):
-        pass
+        '@covers get_callback, assert_equals'
+
+        callback = self.instance.get_callback()
+        self.assertTrue(self.instance.assert_equals(callback))
+
 
 class TestEventHandler(unittest.TestCase):
     def setUp(self):
-        pass
+        self.instance = EventHandler()
 
     def tearDown(self):
-        pass
+        del self.instance
 
-    def test_get_meta(self):
-        pass
+    def test_events(self):
+        '@covers on, trigger, match, get_meta, off'
+        self.trigger1 = False
+        self.trigger2 = False
+        self.trigger3 = False
+        self.trigger4 = False
+        self.trigger5 = False
 
-    def test_match(self):
-        pass
+        def callback1(event, *args):
+            self.trigger1 = True
+            self.assertEqual(args[0], 'foo')
+            self.assertEqual(args[1], 'bar')
+            self.assertEqual(args[2], 'zoo')
+            self.assertEqual(args[3], 'bam')
 
-    def test_off(self):
-        pass
+            self.assertTrue(self.trigger1)
+            self.assertFalse(self.trigger2)
+            self.assertFalse(self.trigger3)
+            self.assertFalse(self.trigger4)
+            self.assertFalse(self.trigger5)
 
-    def test_on(self):
-        pass
+            self.assertEqual(event.get_meta()['pattern'], 'foobar')
 
-    def test_trigger(self):
-        pass
+        def callback2(event, foo, bar):
+            self.trigger2 = True
+            self.assertEqual(foo, 'foo')
+            self.assertEqual(bar, 'bar')
+
+            self.assertTrue(self.trigger1)
+            self.assertTrue(self.trigger2)
+            self.assertFalse(self.trigger3)
+            self.assertFalse(self.trigger4)
+            self.assertFalse(self.trigger5)
+
+            self.assertEqual(event.get_meta()['pattern'], 'foobar')
+
+        def callback3(event, foo, bar, zoo):
+            self.trigger3 = True
+            self.assertEqual(foo, 'foo')
+            self.assertEqual(bar, 'bar')
+            self.assertEqual(zoo, 'zoo')
+
+            self.assertTrue(self.trigger1)
+            self.assertTrue(self.trigger2)
+            self.assertTrue(self.trigger3)
+            self.assertFalse(self.trigger4)
+            self.assertFalse(self.trigger5)
+
+            self.assertEqual(event.get_meta()['pattern'], 'foobar')
+
+        self.instance.on('foobar', callback2)
+        self.instance.on('foobar', callback1, 2)
+        self.instance.on(['foobar', 'foobar2'], callback3)
+
+        @self.instance.on('#foo#')
+        def callback4(event, foo, bar):
+            self.trigger4 = True
+            self.assertEqual(foo, 'foo')
+            self.assertEqual(bar, 'bar')
+
+            self.assertTrue(self.trigger1)
+            self.assertTrue(self.trigger2)
+            self.assertTrue(self.trigger3)
+            self.assertTrue(self.trigger4)
+            self.assertFalse(self.trigger5)
+
+            self.assertEqual(event.get_meta()['pattern'], '#foo#')
+
+        @self.instance.on('foo%s', 0)
+        def callback5(event, *args):
+            self.trigger5 = True
+
+            self.assertEqual(args[0], 'foo')
+            self.assertEqual(args[1], 'bar')
+            self.assertEqual(args[2], 'zoo')
+            self.assertEqual(args[3], 'bam')
+
+            self.assertTrue(self.trigger1)
+            self.assertTrue(self.trigger2)
+            self.assertTrue(self.trigger3)
+            self.assertTrue(self.trigger4)
+            self.assertTrue(self.trigger5)
+
+            self.assertEqual(event.get_meta()['pattern'], 'foo%s')
+            self.assertEqual(event.get_meta()['variables'][0], 'bar')
+
+            return False
+
+        self.instance.trigger('foobar', 'foo', 'bar', 'zoo', 'bam')
+
+        self.trigger1 = False
+        self.trigger2 = False
+        self.trigger3 = False
+        self.trigger4 = False
+        self.trigger5 = False
+        self.instance.trigger('foobar', 'foo', 'bar', 'zoo', 'bam')
+
+        self.instance.off('foobar', callback1) #coverage
+        self.instance.off(None, callback2) #coverage
+        self.instance.off('foobar', callback3) #coverage
 
 class TestEventTrait(unittest.TestCase):
     def setUp(self):
-        pass
+        self.instance = StubEvent()
 
     def tearDown(self):
-        pass
+        del self.instance
 
     def test_get_event_handler(self):
-        pass
+        '@covers get_event_handler'
+        handler = self.instance.get_event_handler()
 
-    def test_on(self):
-        pass
+        self.assertTrue(isinstance(handler, EventInterface))
+        self.assertTrue(isinstance(handler, EventHandler))
+
+    def test_events(self):
+        '@covers on, trigger, off'
+        self.trigger1 = False
+        self.trigger2 = False
+        self.trigger3 = False
+        self.trigger4 = False
+        self.trigger5 = False
+
+        def callback1(event, *args):
+            self.trigger1 = True
+            self.assertEqual(args[0], 'foo')
+            self.assertEqual(args[1], 'bar')
+            self.assertEqual(args[2], 'zoo')
+            self.assertEqual(args[3], 'bam')
+
+            self.assertTrue(self.trigger5)
+            self.assertTrue(self.trigger1)
+            self.assertFalse(self.trigger4)
+            self.assertFalse(self.trigger2)
+            self.assertFalse(self.trigger3)
+
+        def callback2(event, foo, bar, zoo):
+            self.trigger2 = True
+            self.assertEqual(foo, 'foo')
+            self.assertEqual(bar, 'bar')
+            self.assertEqual(zoo, 'zoo')
+
+            self.assertTrue(self.trigger5)
+            self.assertTrue(self.trigger1)
+            self.assertTrue(self.trigger4)
+            self.assertTrue(self.trigger2)
+            self.assertFalse(self.trigger3)
+
+        def callback3(event, foo, bar):
+            self.trigger3 = True
+            self.assertEqual(foo, 'foo')
+            self.assertEqual(bar, 'bar')
+
+        self.instance.on('#foo#', callback2)
+        self.instance.on('foobar', callback1)
+        self.instance.on('foobar2', callback3)
+
+        @self.instance.on('foobar')
+        def callback4(event, foo, bar):
+            self.trigger4 = True
+            self.assertEqual(foo, 'foo')
+            self.assertEqual(bar, 'bar')
+
+            self.assertTrue(self.trigger5)
+            self.assertTrue(self.trigger1)
+            self.assertTrue(self.trigger4)
+            self.assertFalse(self.trigger2)
+            self.assertFalse(self.trigger3)
+
+        @self.instance.on('foobar', 2)
+        def callback5(event, foo, bar):
+            self.trigger5 = True
+            self.assertEqual(foo, 'foo')
+            self.assertEqual(bar, 'bar')
+
+            self.assertTrue(self.trigger5)
+            self.assertFalse(self.trigger1)
+            self.assertFalse(self.trigger4)
+            self.assertFalse(self.trigger2)
+            self.assertFalse(self.trigger3)
+
+        self.instance.trigger('foobar', 'foo', 'bar', 'zoo', 'bam')
 
     def test_set_event_handler(self):
-        pass
+        self.instance.set_event_handler(StubEventHandler())
+        handler = self.instance.get_event_handler()
 
-    def test_trigger(self):
-        pass
+        self.assertTrue(isinstance(handler, EventHandler))
+        self.assertTrue(isinstance(handler, StubEventHandler))
+
+        self.instance.set_event_handler('foo') #coverage
 
 class TestPipeTrait(unittest.TestCase):
     def setUp(self):
