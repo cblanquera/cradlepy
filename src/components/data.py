@@ -12,9 +12,9 @@ class MagicTrait:
     def __delitem__(self, key):
         'Deletes the item accessed like an array'
         # if it exists
-        if name in self._data.keys():
+        if key in self.__dict__.keys():
             #remove it
-            del self._data[name]
+            del self.__dict__[key]
 
     def __getattr__(self, name):
         'Processes get and set type methods processes get property'
@@ -46,7 +46,7 @@ class MagicTrait:
                 key = key[(3 + len(separator)):]
 
                 #if there are no arguments and its a key
-                if not len(args) and key in self._data.keys():
+                if not len(args) and key in self.__dict__.keys():
                     #remove it
                     self.__delitem__(key)
                 else:
@@ -65,17 +65,17 @@ class MagicTrait:
     def __getitem__(self, key):
         'Returns the value accessed like an array'
         # if key is of invalid type or value, the list values will raise the error
-        if key in self._data.keys():
-            return self._data[key]
+        if key in self.__dict__.keys():
+            return self.__dict__[key]
         return None
 
     def __iter__(self):
         'Iterates throught the data'
-        return iter(self._data.items())
+        return iter(self.__dict__.items())
 
     def __len__(self):
         'Returns the length'
-        return len(self._data)
+        return len(self.__dict__)
 
     def __setattr__(self, name, value):
         'Processes set properties'
@@ -83,11 +83,11 @@ class MagicTrait:
 
     def __setitem__(self, key, value):
         'Sets the item accessed like an array'
-        self._data[key] = value
+        self.__dict__[key] = value
 
     def __str__(self):
         'Object to string'
-        return json.dumps(self._data, indent = 4)
+        return json.dumps(self.__dict__, indent = 4)
 
 class DotTrait:
     '''
@@ -107,12 +107,12 @@ class DotTrait:
 
         # notation should something
         if notation == '' or not len(keys):
-            return self._data
+            return self.__dict__
 
         # get the last key, this will be treated separately
         last = keys.pop();
 
-        pointer = self._data
+        pointer = self.__dict__
 
         # Now parse
         for key in keys:
@@ -143,7 +143,7 @@ class DotTrait:
         # get the last key, this will be treated separately
         last = keys.pop();
 
-        pointer = self._data
+        pointer = self.__dict__
 
         # Now parse
         for key in keys:
@@ -174,7 +174,7 @@ class DotTrait:
         # get the last key, this will be treated separately
         last = keys.pop();
 
-        pointer = self._data
+        pointer = self.__dict__
 
         # Now parse
         for key in keys:
@@ -203,7 +203,7 @@ class DotTrait:
 
         last = keys.pop();
 
-        pointer = self._data
+        pointer = self.__dict__
 
         # Now parse
         for key in keys:
@@ -216,7 +216,7 @@ class DotTrait:
 
         return self
 
-class RegistryInterface:
+class RegistryInterface: #ignore coverage
     '''
     Registry are designed to easily manipulate data in
     preparation to integrate with any multi dimensional
@@ -250,8 +250,6 @@ class Registry(MagicTrait, DotTrait, RegistryInterface):
     data store.
     '''
 
-    _data = {}
-
     def __init__(self, data = None):
         'Sets up the data'
         self.set(data)
@@ -270,7 +268,7 @@ class Registry(MagicTrait, DotTrait, RegistryInterface):
         'Returns the exact data given the path keys'
 
         if not len(args):
-            return self._data;
+            return self.__dict__;
 
         separator = '--' + str(uuid.uuid4().hex) + '--'
 
@@ -320,7 +318,7 @@ class Registry(MagicTrait, DotTrait, RegistryInterface):
         value = args.pop()
         return self.set_dot(separator.join(map(str, args)), value, separator)
 
-class ModelInterface:
+class ModelInterface: #ignore coverage
     '''
     Models are designed to easily manipulate data in
     preparation to integrate with any one dimensional
@@ -342,15 +340,13 @@ class Model(MagicTrait, DotTrait, ModelInterface):
     data store. This is the main model object.
     '''
 
-    _data = {}
-
     def __init__(self, data = None):
         'Sets up the data'
         self.set(data)
 
     def get(self):
         'Returns the entire data'
-        return self._data
+        return self.__dict__
 
     def set(self, data):
         'Sets the entire data'
@@ -359,7 +355,7 @@ class Model(MagicTrait, DotTrait, ModelInterface):
                 self.__setitem__(key, value)
         return self
 
-class CollectionInterface:
+class CollectionInterface: #ignore coverage
     '''
     Collections are a managable list of models. Model
     methods called by the collection are simply passed
@@ -396,7 +392,7 @@ class Collection(CollectionInterface):
     massive level. This is the main collection object.
     '''
 
-    _data = []
+    _list = []
 
     FIRST = 'first'
 
@@ -410,13 +406,13 @@ class Collection(CollectionInterface):
         'Deletes the item accessed like an array'
         #if its an integer
         if isinstance(key, int):
-            if key < len(self._data):
-                del self._data[key]
+            if key < len(self._list):
+                del self._list[key]
             return
 
         # it is not an integer
         # go through each model and delete
-        for model in self._data:
+        for model in self._list:
             del model[key]
 
     def __getattr__(self, name):
@@ -425,20 +421,20 @@ class Collection(CollectionInterface):
             #if the method starts with get
             if name[:3] == 'get':
                 results = [];
-                for model in self._data:
+                for model in self._list:
                     results.append(model.__getattr__(name)(*args))
 
                 return results
             #if the method starts with set
             if name[:3] == 'set':
-                for model in self._data:
+                for model in self._list:
                     model.__getattr__(name)(*args)
 
                 #either way return this
                 return self
 
             # call real function
-            for model in self._data:
+            for model in self._list:
                 callback = getattr(model, name, None)
                 if callable(callback):
                     callback(*args)
@@ -448,7 +444,7 @@ class Collection(CollectionInterface):
             return function
 
         # real function ?
-        for model in self._data:
+        for model in self._list:
             if hasattr(model, name):
                 return function
 
@@ -458,7 +454,7 @@ class Collection(CollectionInterface):
         'Returns the value accessed like an array'
         # if key is of invalid type or value, the list values will raise the error
         results = [];
-        for model in self._data:
+        for model in self._list:
             results.append(model[name]);
 
         return results
@@ -469,11 +465,11 @@ class Collection(CollectionInterface):
 
     def __iter__(self):
         'Iterates throught the data'
-        return iter(self._data.items())
+        return iter(self._list.items())
 
     def __len__(self):
         'Returns the length'
-        return len(self._data)
+        return len(self._list)
 
     def __setattr__(self, name, value):
         'Processes set properties'
@@ -481,12 +477,12 @@ class Collection(CollectionInterface):
 
     def __setitem__(self, key, value):
         'Sets the item accessed like an array'
-        for model in self._data:
+        for model in self._list:
             model[key] = value
 
     def __str__(self):
         'Object to string'
-        return json.dumps(self._data, indent = 4)
+        return json.dumps(self._list, indent = 4)
 
     def add(self, model = {}):
         'Adds a row to the collection'
@@ -495,7 +491,7 @@ class Collection(CollectionInterface):
             model = Model(model)
 
         if isinstance(model, Model):
-            self._data.append(model)
+            self._list.append(model)
 
         return self
 
@@ -505,10 +501,10 @@ class Collection(CollectionInterface):
         if index == self.FIRST:
             index = 0
         elif index == self.LAST:
-            index = len(self._data) - 1
+            index = len(self._list) - 1
 
-        if index < len(self._data):
-            del self._data[index]
+        if index < len(self._list):
+            del self._list[index]
 
         return self
 
@@ -517,8 +513,8 @@ class Collection(CollectionInterface):
 
         if not callable(callback):
             return self
-        #print self._data
-        for i, value in enumerate(self._data):
+        #print self._list
+        for i, value in enumerate(self._list):
             callback(self, i, value)
 
         return self
@@ -527,7 +523,7 @@ class Collection(CollectionInterface):
         'Returns the entire data'
 
         results = []
-        for model in self._data:
+        for model in self._list:
             results.append(model.get())
         return results
 
