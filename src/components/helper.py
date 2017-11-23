@@ -48,28 +48,3 @@ class LoopTrait:
             #please return false :)
             while(callback(self, index) != False):
                 index += 1
-
-class BinderTrait:
-    'Adds a method to bind callables to the current instance'
-
-    def bind_method(self, callback):
-        def wrapper(old, *args):
-            siggy = signature(callback)
-            if '*' in str(siggy):
-                return callback(self, *args)
-
-            max = len(siggy.parameters) - 1
-            new_args = args[:max]
-            return callback(self, *new_args)
-        return wrapper
-
-    def bind_static(self, callback):
-        def wrapper(*args):
-            siggy = signature(callback)
-            if '*' in str(siggy):
-                return callback(self, *args)
-
-            max = len(siggy.parameters) - 1
-            new_args = args[:max]
-            return callback(self, *new_args)
-        return wrapper

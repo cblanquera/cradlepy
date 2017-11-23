@@ -1,6 +1,5 @@
 import re
 from inspect import signature
-from .helper import BinderTrait
 
 class EventObserver:
     'Event observer object'
@@ -218,13 +217,14 @@ class EventHandler(EventInterface):
                 # if this is the same event, call the method, if the method returns false
                 siggy = signature(callback)
                 if '*' in str(siggy):
-                    if callback(self, *args) == False:
+                    if callback(*args) == False:
                         EventHandler._meta = False
                         return self
                 else:
-                    max = len(siggy.parameters) - 1
+                    max = len(siggy.parameters)
                     new_args = args[:max]
-                    if callback(self, *new_args) == False:
+
+                    if callback(*new_args) == False:
                         EventHandler._meta = False
                         return self
 
@@ -254,7 +254,7 @@ class EventHandler(EventInterface):
 
         return self
 
-class EventTrait(BinderTrait):
+class EventTrait:
     'Trait used to attach events functionality to classes'
 
     _global_event_handler = None
@@ -288,12 +288,10 @@ class EventTrait(BinderTrait):
                 priority = callback
 
             def wrapper(callback):
-                callback = self.bind_method(callback)
                 handler.on(event, callback, priority)
 
             return wrapper
 
-        callback = self.bind_method(callback)
         handler.on(event, callback, priority)
 
         return self;
@@ -316,132 +314,3 @@ class EventTrait(BinderTrait):
         'Notify all observers of that a specific event has happened'
 
         self.get_event_handler().trigger(event, *args)
-
-class PipeTrait(EventTrait):
-    '''
-    An event pipe executes a series of triggers
-    one after the other called flows. Sub flows
-    defined in the same call to help visualize
-    and group process flows.
-    '''
-
-    _protocols = {}
-
-    _flows = {}
-
-    def flow(self, event, *flow):
-        'Sets up a process flow'
-        @self.on(event)
-        def callback(*args):
-            self.triggerFlow(flow, *args)
-            if self.get_meta() == False:
-                return False
-
-        return self
-
-    def protocol(self, name, callback = None):
-        'Adds a protocol used to custom parse an event name'
-        # create a space
-        self.protocols[name] = callback
-        return self
-
-    def subflow(self, event, *args):
-        'Sets the subflow to be called when there is an array fork'
-        if event in Pipe._flows:
-            self.trigger_flow(Pipe._flows[event], *args)
-
-        return self
-
-    def trigger(self, name, *args):
-        'Calls an event considering classes and protocols'
-
-        #we should deal with strings
-        #then callables respectively
-        #to allow overriding
-        if isinstace(name, str):
-            #is it a protocol?
-            if name.find('://') != -1:
-                return self.trigger_protocol(name, *args)
-
-            return super(Pipe, self).trigger(name, *args)
-
-        if callable(name):
-            name(self, *args)
-
-        #we can only deal with callable and strings
-        #we don't want to throw an error
-        #because it could just be a pseudo
-        #placeholder
-        return self
-
-    def trigger_flow(self, flow, *args):
-        'Separate trigger for flows has nothing to do with `trigger()`'
-        for i, step in enumerate(flow):
-            #subflows will trigger separately
-            if isinstance(step, (list, tuple)):
-                continue
-
-            #rule the subtasks first
-            j = 1;
-
-            index = i + j
-
-            while index < len(flow) and isinstance(flow[index], (list, tuple)):
-                #subflows should have
-                #an event and a handler
-                if len(flow[index]) > 1:
-                    #the subflow is valid
-                    #extract the event out
-                    event = flow[index][0]
-                    del flow[index][0]
-                    Pipe._flows[event] = flow[index]
-
-                j += 1
-                index = i + j
-
-            #now trigger the event
-            self.trigger(step, *args)
-
-            Pipe.flows = {};
-
-            #analyze the meta
-            meta = self.get_event_handler().get_meta()
-
-            #if meta is false
-            if meta == False:
-                #we should also stop the flow
-                break
-
-        return self
-
-    def trigger_protocol(self, protocol, *args):
-        'Calls a protocol'
-
-        separator = protocol.find('://');
-        name = protocol[separator + 3:]
-        protocol = protocol[0:separator]
-
-        #if it's not a registered protocol
-        if not protocol in self._protocols:
-            #oops?
-            return self
-
-        #get the protocol
-        protocol = self._protocols[protocol]
-
-        #we should deal with strings
-        #then callables respectively
-        #to allow overriding
-
-        if callable(protocol):
-            #call the protocol
-            protocol(self, name, args)
-
-        #we can only deal with callable and strings
-        #we don't want to throw an error
-        #because it could just be a pseudo
-        #placeholder
-        return self
-
-class Pipe(PipeTrait):
-    pass
