@@ -276,14 +276,14 @@ class Registry(MagicTrait, DotTrait, RegistryInterface):
     def empty(self, *args):
         'Returns true if the path keys does not exist in the dataset or if it has an empy value'
 
-        if args == None or not len(args):
+        if args is None or not len(args):
             return len(self.__dict__) == 0
 
         separator = '--' + str(uuid.uuid4().hex) + '--'
 
         value = self.get_dot(separator.join(map(str, args)), separator)
 
-        if value == None:
+        if value is None:
             return True
 
         if isinstance(value, (list, tuple, str)):

@@ -1,77 +1,155 @@
+import json
+from ..components.data import Registry
+
 class ContentTrait:
-    'Designed for the Response Object; Adds methods to process raw content'
+    'Designed for the Response Object Adds methods to process raw content'
 
     def get_content(self):
         'Returns the content body'
-        pass
+        self.get('body')
 
     def has_content(self):
         'Returns true if content is set'
-        pass
+        body = self.get_content()
+        return body != None and len(body)
 
     def set_content(self, content):
         'Sets the content'
-        pass
 
-class HeaderTrait:
-    'Designed for the Response Object; Adds methods to process headers'
+        if isinstance(content, (list, dict, tuple)):
+            content = json.dumps(content, indent = 4)
 
-    def add_header(self, name, value = None):
-        'Adds a header parameter'
-        pass
+        if isinstance(content, bool):
+            if content:
+                content = '1'
+            else:
+                content = '0'
 
-    def get_headers(self, name = None):
-        'Returns either the header value given the name or the all headers'
-        pass
+        if content is None:
+            content = ''
 
-    def remove_header(self, name):
-        'Removes a header parameter'
-        pass
-
-class PageTrait:
-    'Designed for the Response Object; Adds methods to process REST type responses'
-
-    def add_meta(self, name, content):
-        'Adds a page meta item'
-        pass
-
-    def get_flash(self):
-        'Returns flash data'
-        pass
-
-    def get_meta(self, *args):
-        'Returns meta given path or all meta data'
-        pass
-
-    def get_page(self, *args):
-        'Returns page data given path or all page data'
-        pass
-
-    def has_page(self, *args):
-        'Returns true if there's any page data'
-        pass
-
-    def remove_page(self, *args):
-        'Removes arbitrary page data'
-        pass
-
-    def set_flash(self, message, type = 'info'):
-        'Sets a Page flash'
-        pass
-
-    def set_page(self, *args):
-        'Sets arbitrary page data'
-        pass
-
-    def set_title(self, title):
-        'Sets a Page title'
-        pass
+        self.set('body', content)
+        return self
 
 class RestTrait:
-    'Designed for the Response Object; Adds methods to process REST type responses'
+    'Designed for the Response Object Adds methods to process REST type responses'
+
+    def add_validation(self, *args):
+        'Adds a JSON validation message or sets all the validations'
+
+        if len(args) < 2:
+            return self
+
+        return self.set('json', 'validation', *args)
+
+    def get_results(self, *args):
+        'Returns JSON results if still in array mode'
+
+        if not len(args):
+            return self.get_dot('json.results')
+
+        return self.get('json', 'results', *args)
+
+    def get_message(self):
+        'Returns the message'
+
+        return self.get_dot('json.message')
+
+    def get_message_type(self):
+        'Determines the message type based on error'
+
+        error = self.get('json', 'error')
+
+        if error is True:
+            return 'error'
+
+        if error is False:
+            return 'success'
+
+        return 'info'
+
+    def get_validation(self, name = None, *args):
+        'Returns JSON validations if still in array mode'
+
+        if name is None:
+            return self.get_dot('json.validation')
+
+        return self.get('json', 'validation', name, *args)
+
+    def has_json(self, *args):
+        'Returns true if theres any JSON'
+
+        if not len(args):
+            return self.exists('json')
+
+        return self.exists('json', *args)
+
+    def has_message(self):
+        'Returns true if theres a message'
+
+        return self.has_json('message')
+
+    def has_results(self, *args):
+        'Returns true if theres any results given name'
+        return self.has_json('results', *args)
+
+    def has_validation(self, *args):
+        'Returns true if theres any validations given name'
+        return self.has_json('validation', *args)
+
+    def is_error(self):
+        'Returns true if theres an error'
+
+        return self.get('json', 'error')
+
+    def is_success(self):
+        'Returns true if theres no error'
+
+        return not self.get('json', 'error')
+
+    def remove_results(self, *args):
+        'Removes results given name or all of the results'
+
+        if not len(args):
+            return self
+
+        return self.remove('json', 'results', *args)
+
+    def remove_validation(self, *args):
+        'Removes a validation given name or all the validations'
+
+        if not len(args):
+            return self
+
+        return self.remove('json', 'validation', *args)
+
+    def set_error(self, status, message = None):
+        'Sets a JSON error message'
+
+        self.set_dot('json.error', status)
+
+        if isinstance(message, str):
+            self.set_dot('json.message', message)
+
+        return self
+
+    def set_results(self, data, *args):
+        'Sets a JSON result'
+
+        if isinstance(data, (list, tuple, dict)):
+            return self.set_dot('json.results', data)
+
+        return self.set('json', 'results', data, *args)
+
+class ResponseInterface:
+    'Response Object Interface'
 
     def add_validation(self, field, message):
         'Adds a JSON validation message or sets all the validations'
+        pass
+
+    def get_content(self):
+        'Returns the content body'
         pass
 
     def get_results(self, *args):
@@ -90,28 +168,32 @@ class RestTrait:
         'Returns JSON validations if still in array mode'
         pass
 
+    def has_content(self):
+        'Returns true if content is set'
+        pass
+
     def has_json(self, *args):
-        'Returns true if there's any JSON'
+        'Returns true if theres any JSON'
         pass
 
     def has_message(self):
-        'Returns true if there's a message'
+        'Returns true if theres a message'
         pass
 
     def has_results(self, *args):
-        'Returns true if there's any results given name'
+        'Returns true if theres any results given name'
         pass
 
     def has_validation(self, *args):
-        'Returns true if there's any validations given name'
+        'Returns true if theres any validations given name'
         pass
 
     def is_error(self):
-        'Returns true if there's an error'
+        'Returns true if theres an error'
         pass
 
     def is_success(self):
-        'Returns true if there's no error'
+        'Returns true if theres no error'
         pass
 
     def remove_results(self, name):
@@ -122,6 +204,10 @@ class RestTrait:
         'Removes a validation given name or all the validations'
         pass
 
+    def set_content(self, content):
+        'Sets the content'
+        pass
+
     def set_error(self, status, message = None):
         'Sets a JSON error message'
         pass
@@ -130,30 +216,32 @@ class RestTrait:
         'Sets a JSON result'
         pass
 
-class StatusTrait:
-    'Designed for the Response Object; Adds methods to process status codes'
-
-    def get_status(self):
-        'Returns the status code'
-        pass
-
-    def set_status(self, code, status):
-        'Sets a status code'
-        pass
-
 class ResponseTrait:
-    'Designed for the HttpHandler we are parting this out to lessen the confusion'
+    'Designed for Handlers we are parting this out to lessen the confusion'
+
+    _response = None
 
     def get_response(self):
         'Returns a response object'
-        pass
+
+        if self._response is None:
+            self.set_response(Response(), True)
+
+        return self._response;
 
     def set_response(self, response):
         'Sets the response object to use'
-        pass
 
-class Response:
-    'Http Response Object'
+        # make sure this is an ResponseInterface
+        if not isinstance(handler, ResponseInterface):
+            return self
+
+        self._response = response
+
+        return self
+
+class Response(Registry, ContentTrait, RestTrait, ResponseInterface):
+    'Response Object'
 
     def load(self):
         'Loads default data'

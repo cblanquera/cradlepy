@@ -217,14 +217,14 @@ class EventHandler(EventInterface):
                 # if this is the same event, call the method, if the method returns false
                 siggy = signature(callback)
                 if '*' in str(siggy):
-                    if callback(*args) == False:
+                    if callback(*args) is False:
                         EventHandler._meta = False
                         return self
                 else:
                     max = len(siggy.parameters)
                     new_args = args[:max]
 
-                    if callback(*new_args) == False:
+                    if callback(*new_args) is False:
                         EventHandler._meta = False
                         return self
 
@@ -264,10 +264,10 @@ class EventTrait:
     def get_event_handler(self):
         'Returns an EventHandler object if none was set, it will auto create one'
 
-        if EventTrait._global_event_handler == None:
+        if EventTrait._global_event_handler is None:
             self.set_event_handler(EventHandler(), True)
 
-        if self._event_handler == None:
+        if self._event_handler is None:
             self._event_handler = EventTrait._global_event_handler
 
         return self._event_handler;
@@ -299,8 +299,8 @@ class EventTrait:
     def set_event_handler(self, handler, is_static = False):
         'Allow for a custom dispatcher to be used'
 
-        # make sure this is an EventHandler
-        if not isinstance(handler, EventHandler):
+        # make sure this is an EventInterface
+        if not isinstance(handler, EventInterface):
             return self
 
         if is_static:
