@@ -5,8 +5,13 @@ Cradle is a micro framework built on traits. Cradle is a different approach to d
 
 ## Running Test
 
-`pip install coverage`
-`coverage run -m unittest discover -v && coverage report`
+```
+pip install coverage
+```
+
+```
+coverage run -m unittest discover -v && coverage report
+```
 
 ## Contributing
 

@@ -2,25 +2,25 @@ from .request import Request
 from .response import Response
 
 class HttpRequestCookieTrait:
-    'Designed for the Request Object; Adds methods to store $_COOKIE data'
+    'Designed for the Request Object; Adds methods to store COOKIE data'
 
     def get_cookies(self, *args):
-        'Returns $_COOKIE given name or all $_COOKIE'
+        'Returns COOKIE given name or all COOKIE'
 
         return self.get('cookie', *args)
 
     def remove_cookies(self, *args):
-        'Removes $_COOKIE given name or all $_COOKIE'
+        'Removes COOKIE given name or all COOKIE'
 
         return self.remove('cookie', *args)
 
     def has_cookies(self, *args):
-        'Returns true if has $_COOKIE given name or if $_COOKIE is set'
+        'Returns true if has COOKIE given name or if COOKIE is set'
 
         return self.exists('cookie', *args)
 
     def set_cookies(self, data, *args):
-        'Sets $_COOKIE'
+        'Sets COOKIE'
 
         if isinstance(data, (list, dict, tuple)):
             return self.set('cookie', data)
@@ -31,45 +31,65 @@ class HttpRequestCookieTrait:
         return self.set('cookie', data, *args)
 
 class HttpRequestGetTrait:
-    'Designed for the Request Object; Adds methods to store $_GET data'
+    'Designed for the Request Object; Adds methods to store GET data'
 
     def get_get(self, *args):
-        'Returns $_GET given name or all $_GET'
-        pass
+        'Returns GET given name or all GET'
+
+        return self.get('get', *args)
 
     def remove_get(self, *args):
-        'Removes $_GET given name or all $_GET'
-        pass
+        'Removes GET given name or all GET'
+
+        return self.remove('get', *args)
 
     def has_get(self, *args):
-        'Returns true if has $_GET given name or if $_GET is set'
-        pass
+        'Returns true if has GET given name or if GET is set'
+
+        return self.exists('get', *args)
 
     def set_get(self, data, *args):
-        'Sets $_GET'
-        pass
+        'Sets GET'
+
+        if isinstance(data, (list, dict, tuple)):
+            return self.set('get', data)
+
+        if len(args) == 0:
+            return self
+
+        return self.set('get', data, *args)
 
 class HttpRequestPostTrait:
-    'Designed for the Request Object; Adds methods to store $_POST data'
+    'Designed for the Request Object; Adds methods to store POST data'
 
     def get_post(self, *args):
-        'Returns $_POST given name or all $_POST'
-        pass
+        'Returns POST given name or all POST'
+
+        return self.get('post', *args)
 
     def remove_post(self, *args):
-        'Removes $_POST given name or all $_POST'
-        pass
+        'Removes POST given name or all POST'
+
+        return self.remove('post', *args)
 
     def has_post(self, *args):
-        'Returns true if has $_POST given name or if $_POST is set'
-        pass
+        'Returns true if has POST given name or if POST is set'
+
+        return self.exists('post', *args)
 
     def set_post(self, data, *args):
-        'Sets $_POST'
-        pass
+        'Sets POST'
+
+        if isinstance(data, (list, dict, tuple)):
+            return self.set('post', data)
+
+        if len(args) == 0:
+            return self
+
+        return self.set('post', data, *args)
 
 class HttpRequestServerTrait:
-    'Designed for the Request Object; Adds methods to store $_SERVER data'
+    'Designed for the Request Object; Adds methods to store SERVER data'
 
     def get_method(self):
         'Returns method if set'
@@ -112,23 +132,41 @@ class HttpRequestServerTrait:
         pass
 
 class HttpRequestSessionTrait:
-    'Designed for the Request Object; Adds methods to store $_SESSION data'
+    'Designed for the Request Object; Adds methods to store SESSION data'
 
     def get_session(self, *args):
-        'Returns $_SESSION given name or all $_SESSION'
-        pass
+        'Returns SESSION given name or all SESSION'
+
+        return self.get('session', *args)
 
     def remove_session(self, *args):
-        'Removes $_SESSION given name or all $_SESSION'
-        pass
+        'Removes SESSION given name or all SESSION'
+
+        self.remove('session', *args)
+
+        #TODO: link session object
+
+        return self
 
     def has_session(self, *args):
-        'Returns true if has $_SESSION given name or if $_SESSION is set'
-        pass
+        'Returns true if has SESSION given name or if SESSION is set'
+
+        return self.exists('session', *args)
 
     def set_session(self, data, *args):
-        'Sets $_SESSION'
-        pass
+        'Sets SESSION'
+
+        if isinstance(data, (list, dict, tuple)):
+            return self.set('session', data)
+
+        if len(args) == 0:
+            return self
+
+        self.set('session', data, *args)
+
+        #TODO: link session object
+
+        return self
 
 class HttpRequest(
     Request,
