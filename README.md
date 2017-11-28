@@ -15,4 +15,15 @@ coverage run -m unittest discover -v && coverage report
 
 ## Contributing
 
-Don't commit `pyc` files please. If you are forgetful like me, please use `export PYTHONDONTWRITEBYTECODE=1` during development
+ 1. Go to this directory
+ 2. `pip3 install -e .`
+ 3. Create or go to a sandbox folder (in a different directory)
+ 4. Create a python file and include the following and run it:
+
+```
+from cradlepy import Model
+print(Model().setFoo('bar'))
+```
+
+### Notes:
+ - Please use `export PYTHONDONTWRITEBYTECODE=1` during development

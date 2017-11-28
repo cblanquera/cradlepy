@@ -1,6 +1,6 @@
 import unittest
 
-from src.components.event import *
+from cradlepy.components.event import *
 
 class EventStub(EventTrait):
     pass

@@ -179,7 +179,7 @@ class HttpRequest(
     'Http Request Object'
 
     def load(self):
-        'Loads default data given by PHP'
+        'Loads default data given by WSGI'
         pass
 
 class HttpResponseHeaderTrait:

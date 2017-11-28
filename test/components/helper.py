@@ -1,6 +1,6 @@
 import unittest
 
-from src.components.helper import *
+from cradlepy.components.helper import *
 
 class HelperStub(ConditionalTrait, LoopTrait):
     ordered = [4, 5, 6, 7]

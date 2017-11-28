@@ -1,6 +1,6 @@
 import unittest
 
-from src.components.data import *
+from cradlepy.components.data import *
 
 class DataStub(MagicTrait, DotTrait):
     pass
